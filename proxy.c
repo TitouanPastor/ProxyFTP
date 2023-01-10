@@ -108,7 +108,7 @@ int main()
     }
     // // Echange de données avec le client connecté
 
-    strcpy(buffer, "220 Bienvenue sur le proxy FTP !\n");
+    strcpy(buffer, "221 Bienvenue sur le proxy FTP !\n");
     write(descSockCOM, buffer, strlen(buffer));
 
     /*******
@@ -163,10 +163,48 @@ int main()
         // On transmet le message du serveur distant ftp au client
         write(descSockCOM, buffer, strlen(buffer));
 
+
+
+
+
+
         // On boucle tant qu'il y a communication entre le client et le ftp distant
         bool userConnectedToRemote = false;
         while (remoteConnectionOk)
         {
+            // On vérifie si l'utilisateur est connecté au serveur distant
+            // Sinon on le connecte avec le login donné juste avant
+            if (!userConnectedToRemote)
+            {
+
+                // Login
+                memset(buffer, 0, MAXBUFFERLEN);
+                printf("[LOG] Envoi du login au serveur distant FTP.\n");
+
+                // On se connecte avec le login précédement donné
+                // On transmet le message du client au serveur distant ftp
+                strcat(login, "\r\n");
+                write(sockRemoteServer, login, strlen(login));
+
+                // On lit le message du serveur distant ftp
+                ecode = read(sockRemoteServer, buffer, MAXBUFFERLEN - 1);
+                buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
+                if (ecode == -1)
+                {
+                    perror("[LOG] Erreur lecture socket");
+                    exit(7);
+                }
+                // On affiche le message du serveur distant ftp
+                printf("<--- : %s", buffer);
+
+                // On transmet le message du serveur distant ftp au client
+                write(descSockCOM, buffer, strlen(buffer));
+            }
+
+
+
+
+
 
             memset(buffer, 0, MAXBUFFERLEN);
 
@@ -206,35 +244,6 @@ int main()
 
             // On transmet le message du serveur distant ftp au client
             write(descSockCOM, buffer, strlen(buffer));
-
-            if (!userConnectedToRemote)
-            {
-                printf("[LOG] Login : %s", login);
-                printf("[LOG] Envoi du login au serveur distant FTP.\n");
-
-                // On se connecte avec le login précédement donné
-                // On transmet le message du client au serveur distant ftp
-                login[strlen(login)+1] = '\r';
-                printf("[LOG] strlen login : %i\n", strlen(login));
-                write(sockRemoteServer, "USER anonymous\r\n", strlen("USER anonymous\r\n"));
-
-                // On lit le message du serveur distant ftp
-                memset(buffer, 0, MAXBUFFERLEN);
-                ecode = read(sockRemoteServer, buffer, MAXBUFFERLEN - 1);
-                buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
-                if (ecode == -1)
-                {
-                    perror("[LOG] Erreur lecture socket");
-                    exit(7);
-                }
-                // On affiche le message du serveur distant ftp
-                printf("<--- : %s", buffer);
-
-                // On transmet le message du serveur distant ftp au client
-                write(descSockCOM, buffer, strlen(buffer));
-
-                userConnectedToRemote = true;
-            }
         }
     }
 
