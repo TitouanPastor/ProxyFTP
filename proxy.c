@@ -30,10 +30,12 @@ int main()
     char buffer[MAXBUFFERLEN];      // Tampon de communication entre le client et le serveur
 
     // Information serveur distant
+    int sockRemoteServer;
     char login[30];
     char password[30];
     char remoteServerName[MAXHOSTLEN];
     char remoteServerPort[MAXPORTLEN] = "21";
+    bool remoteConnectionOk = true;
 
     // Initialisation de la socket de RDV IPv4/TCP
     descSockRDV = socket(AF_INET, SOCK_STREAM, 0);
@@ -63,7 +65,7 @@ int main()
     ecode = bind(descSockRDV, res->ai_addr, res->ai_addrlen);
     if (ecode == -1)
     {
-        perror("Erreur liaison de la socket de RDV");
+        perror("[LOG] Erreur liaison de la socket de RDV");
         exit(3);
     }
     // Nous n'avons plus besoin de cette liste chainée addrinfo
@@ -74,24 +76,24 @@ int main()
     ecode = getsockname(descSockRDV, (struct sockaddr *)&myinfo, &len);
     if (ecode == -1)
     {
-        perror("SERVEUR: getsockname");
+        perror("[LOG] SERVEUR: getsockname");
         exit(4);
     }
     ecode = getnameinfo((struct sockaddr *)&myinfo, sizeof(myinfo), serverAddr, MAXHOSTLEN,
                         serverPort, MAXPORTLEN, NI_NUMERICHOST | NI_NUMERICSERV);
     if (ecode != 0)
     {
-        fprintf(stderr, "error in getnameinfo: %s\n", gai_strerror(ecode));
+        fprintf(stderr, "[LOG] error in getnameinfo: %s\n", gai_strerror(ecode));
         exit(4);
     }
-    printf("L'adresse d'ecoute est: %s\n", serverAddr);
-    printf("Le port d'ecoute est: %s\n", serverPort);
+    printf("[LOG] L'adresse d'ecoute est: %s\n", serverAddr);
+    printf("[LOG] Le port d'ecoute est: %s\n", serverPort);
 
     // Definition de la taille du tampon contenant les demandes de connexion
     ecode = listen(descSockRDV, LISTENLEN);
     if (ecode == -1)
     {
-        perror("Erreur initialisation buffer d'écoute");
+        perror("[LOG] Erreur initialisation buffer d'écoute");
         exit(5);
     }
 
@@ -101,14 +103,11 @@ int main()
     descSockCOM = accept(descSockRDV, (struct sockaddr *)&from, &len);
     if (descSockCOM == -1)
     {
-        perror("Erreur accept\n");
+        perror("[LOG] Erreur accept\n");
         exit(6);
     }
-    // Echange de données avec le client connecté
+    // // Echange de données avec le client connecté
 
-    /*****
-     * Testez de mettre 220 devant BLABLABLA ...
-     * **/
     strcpy(buffer, "220 Bienvenue sur le proxy FTP !\n");
     write(descSockCOM, buffer, strlen(buffer));
 
@@ -118,20 +117,16 @@ int main()
      *
      * *****/
 
-    /*
-
-    */
-
     // Tant que l'utilisateur n'écrit pas "exit" dans le terminal
-    while (strcmp(buffer, "exit ") != 0)
+    while (remoteConnectionOk)
     {
-        // On vide le buffer
-        memset(buffer, 0, MAXBUFFERLEN);
+        memset(buffer, 0, MAXBUFFERLEN); // On vide le tampon de communication
         // On lit le message du client
         ecode = read(descSockCOM, buffer, MAXBUFFERLEN - 1);
+        buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
         if (ecode == -1)
         {
-            perror("Erreur lecture socket");
+            perror("[LOG] Erreur lecture socket");
             exit(7);
         }
         buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
@@ -140,34 +135,111 @@ int main()
         printf("---> : %s", buffer);
         // On sépare le message du client en plusieurs parties avec le caractère @
         sscanf(buffer, "%[^@]@%s", login, remoteServerName);
-        // On récupère la première partie du message
-        // On récupère la deuxième partie du message
-        // On affiche la commande
-        printf("loginUtilisateur : %s\n", login);
-        printf("ipServeurDistant : %s\n", remoteServerName);
+        // On affiche les deux parties
+        printf("[LOG] loginUtilisateur : %s\n", login);
+        printf("[LOG] ipServeurDistant : %s\n", remoteServerName);
 
-        int sockRemoteServer;
+        // On se connecte au serveur FTP distant
         ecode = connect2Server(remoteServerName, remoteServerPort, &sockRemoteServer);
 
         if (ecode == -1)
         {
-            perror("Erreur connexion serveur distant FTP");
+            perror("[LOG] Erreur connexion serveur distant FTP");
             exit(8);
         }
-        printf("Connexion serveur distant FTP OK\n");
+        printf("[LOG] Connexion serveur distant FTP OK\n");
 
         // Lecture du message du serveur distant FTP
         memset(buffer, 0, MAXBUFFERLEN);
         ecode = read(sockRemoteServer, buffer, MAXBUFFERLEN - 1);
+        buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
         if (ecode == -1)
         {
-            perror("Erreur lecture socket");
+            perror("[LOG] Erreur lecture socket");
             exit(7);
         }
-        printf("Message du serveur distant FTP : %s\n", buffer);
+        printf("<--- : %s", buffer);
+
+        // On transmet le message du serveur distant ftp au client
+        write(descSockCOM, buffer, strlen(buffer));
+
+        // On boucle tant qu'il y a communication entre le client et le ftp distant
+        bool userConnectedToRemote = false;
+        while (remoteConnectionOk)
+        {
+
+            memset(buffer, 0, MAXBUFFERLEN);
+
+            // On lit le message du client
+            ecode = read(descSockCOM, buffer, MAXBUFFERLEN - 1);
+            buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
+            if (ecode == -1)
+            {
+                perror("[LOG] Erreur lecture socket");
+                exit(7);
+            }
+            // On affiche le message du client
+            printf("---> : %s", buffer);
+
+            // On vérifie si l'utilisateur souhaite arreter la connection
+            char *result = strstr(buffer, "QUIT");
+            if (result != NULL)
+            {
+                remoteConnectionOk = false;
+                printf("[LOG] Connexion serveur distant FTP fermée.\n");
+            }
+
+            // On transmet le message du client au serveur distant ftp
+            write(sockRemoteServer, buffer, strlen(buffer));
+
+            // On lit le message du serveur distant ftp
+            memset(buffer, 0, MAXBUFFERLEN);
+            ecode = read(sockRemoteServer, buffer, MAXBUFFERLEN - 1);
+            buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
+            if (ecode == -1)
+            {
+                perror("[LOG] Erreur lecture socket");
+                exit(7);
+            }
+            // On affiche le message du serveur distant ftp
+            printf("<--- : %s", buffer);
+
+            // On transmet le message du serveur distant ftp au client
+            write(descSockCOM, buffer, strlen(buffer));
+
+            if (!userConnectedToRemote)
+            {
+                printf("[LOG] Login : %s", login);
+                printf("[LOG] Envoi du login au serveur distant FTP.\n");
+
+                // On se connecte avec le login précédement donné
+                // On transmet le message du client au serveur distant ftp
+                login[strlen(login)+1] = '\r';
+                printf("[LOG] strlen login : %i\n", strlen(login));
+                write(sockRemoteServer, "USER anonymous\r\n", strlen("USER anonymous\r\n"));
+
+                // On lit le message du serveur distant ftp
+                memset(buffer, 0, MAXBUFFERLEN);
+                ecode = read(sockRemoteServer, buffer, MAXBUFFERLEN - 1);
+                buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
+                if (ecode == -1)
+                {
+                    perror("[LOG] Erreur lecture socket");
+                    exit(7);
+                }
+                // On affiche le message du serveur distant ftp
+                printf("<--- : %s", buffer);
+
+                // On transmet le message du serveur distant ftp au client
+                write(descSockCOM, buffer, strlen(buffer));
+
+                userConnectedToRemote = true;
+            }
+        }
     }
 
     // Fermeture de la connexion
+    close(sockRemoteServer);
     close(descSockCOM);
     close(descSockRDV);
 }
