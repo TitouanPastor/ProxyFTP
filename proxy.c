@@ -234,24 +234,27 @@ int main()
                 // On affiche le message du serveur distant ftp
                 printf("<--- taille : %i : %s", strlen(buffer), buffer);
 
-                // Password
+                // On transmet le message du serveur distant ftp au client
+                write(descSockCOM, buffer, strlen(buffer));
+
+                                // Password
                 // On se connecte avec le mot de passe a@a.fr
 
-                write(sockRemoteServer, "PASS anonymous@gmail.fr\r\n", strlen("PASS anonymous@gmail.fr\r\n"));
-                printf("-<>- taille : %i : %s", strlen("PASS anonymous@gmail.fr\r\n"), "PASS anonymous@gmail.fr\r\n");
+                // write(sockRemoteServer, "PASS anonymous@gmail.fr\r\n", strlen("PASS anonymous@gmail.fr\r\n"));
+                // printf("-<>- taille : %i : %s", strlen("PASS anonymous@gmail.fr\r\n"), "PASS anonymous@gmail.fr\r\n");
 
                 // On lit le message du serveur distant ftp
-                memset(buffer, 0, MAXBUFFERLEN);
-                ecode = read(sockRemoteServer, buffer, MAXBUFFERLEN - 1);
-                buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
-                if (ecode == -1)
-                {
-                    perror("[LOG] Erreur lecture socket");
-                    exit(7);
-                }
+                // memset(buffer, 0, MAXBUFFERLEN);
+                // ecode = read(sockRemoteServer, buffer, MAXBUFFERLEN - 1);
+                // buffer[ecode] = '\0'; // On ajoute le caractère de fin de chaîne
+                // if (ecode == -1)
+                // {
+                //     perror("[LOG] Erreur lecture socket");
+                //     exit(7);
+                // }
 
                 // On affiche le message du serveur distant ftp
-                printf("<--- taille : %i : %s", strlen(buffer), buffer);
+                // printf("<--- taille : %i : %s", strlen(buffer), buffer);
 
                 // On transmet le message du serveur distant ftp au client
                 // write(descSockCOM, bufferInitial, strlen(bufferInitial));
