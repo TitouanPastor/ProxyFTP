@@ -306,19 +306,27 @@ int main()
                 // On envoi le message du serveur distant ftp au client
                 // On dit que la commande port est Ok
                 memset(buffer, 0, MAXBUFFERLEN);
-                strcpy(buffer, "200 PORT command successful.\r\n");
+                strcpy(buffer, "200 PORT command successful\n");
                 write(descSockCOM, buffer, strlen(buffer));
+                printf("-<>- taille : %i : %s\n", strlen(buffer), buffer);
+
+                // On envoi le message "150 Opening ASCII mode data connection for file list"
+                // memset(buffer, 0, MAXBUFFERLEN);
+                // strcpy(buffer, "150 Opening ASCII mode data connection for file list\r\n");
+                // write(descSockCOM, buffer, strlen(buffer));
 
                 printf("[LOG][DATA] Envoi du message du serveur distant FTP au client.\n");
                 printf("[LOG] ipFtpDistantData : %s\n", ipFtpDistantData);
                 printf("[LOG] portServeurData : %s\n", portServeurDataString);
                 write(descSockDATACOM, bufferData, strlen(bufferData));
                 close(descSockDATACOM);
+                printf("-<>- taille : %i : %s\n", strlen(bufferData), bufferData);
 
                 // On dit que le transfere est réussi au client
-                memset(buffer, 0, MAXBUFFERLEN);
-                strcpy(buffer, "226 Transfer complete\n");
-                write(descSockCOM, buffer, strlen(buffer));
+                // memset(buffer, 0, MAXBUFFERLEN);
+                // strcpy(buffer, "226 Transfer complete\r\n");
+                // write(descSockCOM, buffer, strlen(buffer));
+                // printf("-<>- taille : %i : %s\n", strlen(buffer), buffer);
             }
             else
             {
