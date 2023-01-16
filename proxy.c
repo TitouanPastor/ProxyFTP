@@ -9,7 +9,7 @@
 
 #define SERVADDR "127.0.0.1"  // Définition de l'adresse IP d'écoute
 #define SERVPORT "0"          // Définition du port d'écoute, si 0 port choisi dynamiquement
-#define LISTENLEN 1           // Taille de la file des demandes de connexion
+#define LISTENLEN 5           // Taille de la file des demandes de connexion
 #define MAXBUFFERLEN 1024     // Taille du tampon pour les échanges de données
 #define MAXBUFFERDATALEN 4096 // Taille du tampon pour les échanges des connections data
 #define MAXHOSTLEN 64         // Taille d'un nom de machine
@@ -41,9 +41,15 @@ int main()
     char remoteServerName[MAXHOSTLEN];
     char remoteServerPort[MAXPORTLEN] = "21";
     bool remoteConnectionOk = true;
+    bool sendData = false;
+
+ 
+    
 
     // Initialisation de la socket de RDV IPv4/TCP
     descSockRDV = socket(AF_INET, SOCK_STREAM, 0);
+    //int max_seg = 4096;
+    //setsockopt(descSockRDV, 6, 4096 , &max_seg, sizeof(max_seg));
     if (descSockRDV == -1)
     {
         perror("Erreur création socket RDV\n");
@@ -221,7 +227,10 @@ int main()
             if (strcmp(bufferCut, "QUIT") == 0)
             {
                 printf("[LOG] Fermeture de la connexion avec le serveur distant FTP.\n");
-                // remoteConnectionOk = false;
+                remoteConnectionOk = false;
+                memset(buffer, 0, MAXBUFFERLEN);
+                strcpy(buffer, "221 Goodby.\r\n");
+                write(descSockCOM, buffer, strlen(buffer));
             }
             else if (strcmp(bufferCut, "PORT") == 0)
             {
@@ -279,12 +288,18 @@ int main()
                 printf("[LOG][DATA] Envoi de la commande LIST au serveur distant FTP.\n");
                 memset(buffer, 0, MAXBUFFERLEN);
                 strcpy(buffer, "LIST\r\n");
-                write(sockRemoteServer, buffer, strlen(buffer));
+                int codeWrite;
+                codeWrite = write(sockRemoteServer, buffer, strlen(buffer));
+                if (codeWrite == -1)
+                {
+                    perror("[LOG][DATA] Erreur ecriture socket");
+                    exit(9);
+                }
 
                 // On lit le message du serveur distant ftp sur la connexion de données
                 memset(bufferData, 0, MAXBUFFERDATALEN);
                 ecode = read(sockRemoteDataServer, bufferData, MAXBUFFERDATALEN - 1);
-                bufferData[ecode] = '\0';
+                strcat(bufferData,"\r\n");
                 if (ecode == -1)
                 {
                     perror("[LOG][DATA] Erreur lecture socket");
@@ -310,44 +325,67 @@ int main()
                 write(descSockCOM, buffer, strlen(buffer));
                 printf("-<>- taille : %i : %s\n", strlen(buffer), buffer);
 
+                printf("---> taille socket: %i", len);
+                sendData = true;
+
                 // On envoi le message "150 Opening ASCII mode data connection for file list"
                 // memset(buffer, 0, MAXBUFFERLEN);
                 // strcpy(buffer, "150 Opening ASCII mode data connection for file list\r\n");
                 // write(descSockCOM, buffer, strlen(buffer));
 
-                printf("[LOG][DATA] Envoi du message du serveur distant FTP au client.\n");
-                printf("[LOG] ipFtpDistantData : %s\n", ipFtpDistantData);
-                printf("[LOG] portServeurData : %s\n", portServeurDataString);
-                write(descSockDATACOM, bufferData, strlen(bufferData));
-                close(descSockDATACOM);
-                printf("-<>- taille : %i : %s\n", strlen(bufferData), bufferData);
+                // printf("---> taille socket: %i", len);
+
+                // printf("[LOG][DATA] Envoi du message du serveur distant FTP au client.\n");
+                // printf("[LOG] ipFtpDistantData : %s\n", ipFtpDistantData);
+                // printf("[LOG] portServeurData : %s\n", portServeurDataString);
+                // write(descSockDATACOM, bufferData, strlen(bufferData));
+                // close(descSockDATACOM);
+                // printf("-<>- taille : %i : %s\n", strlen(bufferData), bufferData);
+
+                // printf("---> taille socket: %i", len);
 
                 // On dit que le transfere est réussi au client
                 // memset(buffer, 0, MAXBUFFERLEN);
                 // strcpy(buffer, "226 Transfer complete\r\n");
                 // write(descSockCOM, buffer, strlen(buffer));
                 // printf("-<>- taille : %i : %s\n", strlen(buffer), buffer);
-            }
+            } 
             else
             {
+            
 
-                // On transmet le message du client au serveur distant ftp
-                write(sockRemoteServer, buffer, strlen(buffer));
+                    printf("passe dans le else\n");
+                    // On transmet le message du client au serveur distant ftp
+                    write(sockRemoteServer, buffer, strlen(buffer));
 
-                // On lit le message du serveur distant ftp
-                memset(buffer, 0, MAXBUFFERLEN);
-                ecode = read(sockRemoteServer, buffer, MAXBUFFERLEN - 1);
-                buffer[ecode] = '\0';
-                if (ecode == -1)
-                {
-                    perror("[LOG] Erreur lecture socket");
-                    exit(7);
+                    // On lit le message du serveur distant ftp
+                    memset(buffer, 0, MAXBUFFERLEN);
+                    ecode = read(sockRemoteServer, buffer, MAXBUFFERLEN - 1);
+                    buffer[ecode] = '\0';
+                    if (ecode == -1)
+                    {
+                        perror("[LOG] Erreur lecture socket");
+                        exit(7);
+                    }
+                    // On affiche le message du serveur distant ftp
+                    printf("<--- taille : %i : %s", strlen(buffer), buffer);
+
+                    // On transmet le message du serveur distant ftp au client
+                    write(descSockCOM, buffer, strlen(buffer));
+                    if (sendData){
+                        printf("[LOG][DATA] Envoi du message du serveur distant FTP au client.\n"); 
+                        write(descSockDATACOM, bufferData, strlen(bufferData));
+                        close(descSockDATACOM);
+                        printf("-<>- taille : %i : %s", strlen(bufferData), bufferData);
+                        memset(bufferData, 0, MAXBUFFERDATALEN);
+                        sendData = false;
+                        memset(buffer, 0, MAXBUFFERLEN);
+                        // strcpy(buffer, "226 Transfer complete\r\n");
+                        // write(descSockCOM, buffer, strlen(buffer));
+                        // printf("-<>- taille : %i : %s\n", strlen(buffer), buffer);
+
+                    
                 }
-                // On affiche le message du serveur distant ftp
-                printf("<--- taille : %i : %s", strlen(buffer), buffer);
-
-                // On transmet le message du serveur distant ftp au client
-                write(descSockCOM, buffer, strlen(buffer));
             }
         }
     }
