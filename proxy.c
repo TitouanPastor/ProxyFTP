@@ -117,8 +117,7 @@ int main()
 
     // Initialisation de la socket de RDV IPv4/TCP
     descSockRDV = socket(AF_INET, SOCK_STREAM, 0);
-    // int max_seg = 4096;
-    // setsockopt(descSockRDV, 6, 4096 , &max_seg, sizeof(max_seg));
+
     if (descSockRDV == -1)
     {
         perror("Erreur création socket RDV\n");
@@ -223,6 +222,7 @@ int main()
                 }
                 printf("[LOG] Connexion serveur distant FTP OK\n");
 
+                //331 Demande de mot de passe
                 lireMessageServeur(sockRemoteServer, buffer);
 
                 // On boucle tant qu'il y a communication entre le client et le ftp distant
@@ -241,6 +241,7 @@ int main()
                         printf("-<>- taille : %i : %s", strlen(login), login);
 
                         // On lit le message du serveur distant ftp
+                        //230 Utilisateur connecté
                         lireMessageServeur(sockRemoteServer, buffer);
 
                         // On transmet le message du serveur distant ftp au client
@@ -248,7 +249,7 @@ int main()
 
                         userConnectedToRemote = true;
                     }
-
+                    //"En attente" d'une commande du client
                     lireMessageClient(descSockCOM, buffer);
 
                     // On vérifie si l'utilisateur souhaite arreter la connection
@@ -262,6 +263,7 @@ int main()
                         strcpy(buffer, "221 Connexion au proxy fermée.\r\n");
                         envoyerMessageClient(descSockCOM, buffer);
                     }
+                    //Si la commande est ls
                     else if (strcmp(bufferCut, "PORT") == 0)
                     {
                         // On récupère l'ip et le port coté client
@@ -314,13 +316,13 @@ int main()
                         // On envoi la commande LIST au serveur distant FTP
                         envoyerMessageServeur(sockRemoteServer, buffer);
 
-                        // On lit le message du serveur distant ftp
+                        // On lit le message du serveur distant ftp (150)
                         lireMessageServeur(sockRemoteServer, buffer);
 
-                        // On envoi le message au client
+                        // On envoi le message au client (150 Opening ASCII mode data connection for file list.)
                         envoyerMessageClient(descSockCOM, buffer);
 
-                        // On lit le message du serveur distant ftp sur la connexion de données
+                        // On lit le message du serveur distant ftp sur la connexion de données (le LS)
                         lireMessageData(sockRemoteDataServer, buffer, bufferData);
                         close(sockRemoteDataServer);
 
@@ -337,14 +339,15 @@ int main()
                         close(descSockDATACOM);
                         memset(bufferData, 0, MAXBUFFERDATALEN);
 
-                        // On lit le message du serveur distant ftp
+                        // On lit le message du serveur distant ftp (226 Transfer complete)
                         lireMessageServeur(sockRemoteServer, buffer);
 
-                        // On envoi le message au client
+                        // On envoi le message au client (226)
                         envoyerMessageClient(descSockCOM, buffer);
                     }
                     else
                     {
+                        //Pour tout les autres messages
                         // On transmet le message du client au serveur distant ftp
                         envoyerMessageServeur(sockRemoteServer, buffer);
 
