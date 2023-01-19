@@ -23,72 +23,6 @@ void lireMessageClient(int sock, char *buffer);
 void lireMessageServeur(int sock, char *buffer);
 void lireMessageData(int sock, char *buffer, char *bufferData);
 
-void envoyerMessageClient(int sock, char *buffer)
-{
-    ecode = write(sock, buffer, strlen(buffer));
-    if (ecode == -1)
-    {
-        perror("[LOG] Erreur envoi message client");
-        exit(5);
-    }
-    printf("<--- [SEND][CLIENT] : taille : %i : %s", strlen(buffer), buffer);
-}
-
-void envoyerMessageServeur(int sock, char *buffer)
-{
-    ecode = write(sock, buffer, strlen(buffer));
-    if (ecode == -1)
-    {
-        perror("[LOG] Erreur envoi message serveur");
-        exit(5);
-    }
-    printf("---> [SEND][SERVER] : taille : %i : %s", strlen(buffer), buffer);
-}
-
-void lireMessageClient(int sock, char *buffer)
-{
-    memset(buffer, 0, MAXBUFFERLEN);
-    ecode = read(sock, buffer, MAXBUFFERLEN - 1);
-    buffer[ecode] = '\0';
-    if (ecode == -1)
-    {
-        perror("[LOG] Erreur lecture socket client");
-        exit(7);
-    }
-}
-
-void lireMessageServeur(int sock, char *buffer)
-{
-    memset(buffer, 0, MAXBUFFERLEN);
-    ecode = read(sock, buffer, MAXBUFFERLEN - 1);
-    buffer[ecode] = '\0';
-    if (ecode == -1)
-    {
-        perror("[LOG] Erreur lecture socket serveur");
-        exit(7);
-    }
-}
-
-void lireMessageData(int sock, char *buffer, char *bufferData)
-{
-    memset(buffer, 0, MAXBUFFERLEN);
-    memset(bufferData, 0, MAXBUFFERDATALEN);
-    ecode = read(sock, buffer, MAXBUFFERLEN - 1);
-    strcat(bufferData, buffer);
-    memset(buffer, 0, MAXBUFFERLEN);
-    while (ecode != 0)
-    {
-        ecode = read(sock, buffer, MAXBUFFERLEN - 1);
-        strcat(bufferData, buffer);
-        memset(buffer, 0, MAXBUFFERLEN);
-    }
-    if (ecode == -1)
-    {
-        perror("[LOG][DATA] Erreur lecture socket data");
-        exit(7);
-    }
-}
-
 int main()
 {
     char serverAddr[MAXHOSTLEN];       // Adresse du serveur
@@ -366,5 +300,77 @@ int main()
             close(descSockRDV);
             exit(0);
         }
+    }
+}
+
+
+
+
+
+
+// Fonctions
+void envoyerMessageClient(int sock, char *buffer)
+{
+    ecode = write(sock, buffer, strlen(buffer));
+    if (ecode == -1)
+    {
+        perror("[LOG] Erreur envoi message client");
+        exit(5);
+    }
+    printf("<--- [SEND][CLIENT] : taille : %i : %s", strlen(buffer), buffer);
+}
+
+void envoyerMessageServeur(int sock, char *buffer)
+{
+    ecode = write(sock, buffer, strlen(buffer));
+    if (ecode == -1)
+    {
+        perror("[LOG] Erreur envoi message serveur");
+        exit(5);
+    }
+    printf("---> [SEND][SERVER] : taille : %i : %s", strlen(buffer), buffer);
+}
+
+void lireMessageClient(int sock, char *buffer)
+{
+    memset(buffer, 0, MAXBUFFERLEN);
+    ecode = read(sock, buffer, MAXBUFFERLEN - 1);
+    buffer[ecode] = '\0';
+    if (ecode == -1)
+    {
+        perror("[LOG] Erreur lecture socket client");
+        exit(7);
+    }
+}
+
+void lireMessageServeur(int sock, char *buffer)
+{
+    memset(buffer, 0, MAXBUFFERLEN);
+    ecode = read(sock, buffer, MAXBUFFERLEN - 1);
+    buffer[ecode] = '\0';
+    if (ecode == -1)
+    {
+        perror("[LOG] Erreur lecture socket serveur");
+        exit(7);
+    }
+}
+
+void lireMessageData(int sock, char *buffer, char *bufferData)
+{
+    memset(buffer, 0, MAXBUFFERLEN);
+    memset(bufferData, 0, MAXBUFFERDATALEN);
+    ecode = read(sock, buffer, MAXBUFFERLEN - 1);
+    strcat(bufferData, buffer);
+    memset(buffer, 0, MAXBUFFERLEN);
+    while (ecode != 0)
+    {
+        ecode = read(sock, buffer, MAXBUFFERLEN - 1);
+        strcat(bufferData, buffer);
+        memset(buffer, 0, MAXBUFFERLEN);
+    }
+    if (ecode == -1)
+    {
+        perror("[LOG][DATA] Erreur lecture socket data");
+        exit(7);
     }
 }
