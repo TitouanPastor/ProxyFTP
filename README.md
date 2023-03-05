@@ -1,14 +1,27 @@
-# Projet de ProxyFTP
-Le projet de ProxyFTP est une solution logicielle qui agit comme un mandataire ou intermédiaire entre un client FTP et un serveur FTP. En étant situé à la frontière entre le domaine local et le reste du monde, le proxy permet aux utilisateurs d'accéder à des serveurs FTP sur Internet.
+# ProxyFTP Project
 
-L'identification de l'utilisateur et du site serveur doit être fournie au proxy sous la forme suivante: nom_login@nom_serveur. Il est important de noter que plusieurs machines peuvent se connecter en même temps au proxy, qui va créer un fils pour chaque client connecté.
+The ProxyFTP project is a software solution that acts as a proxy or intermediary between an FTP client and an FTP server. By being located at the border between the local domain and the rest of the world, the proxy allows users to access FTP servers on the Internet.
 
-Le projet a été initié par les professeurs et les étudiants ont été chargés de programmer la connexion entre le client et le serveur à l'aide du proxy. Le projet ProxyFTP offre une solution efficace pour sécuriser les connexions FTP.
+
+
+The identification of the user and the server site must be provided to the proxy in the following form: login@servername. It is important to note that several machines can connect at the same time to the proxy, which will create a thread for each connected client.
+
+
+
+The project was initiated by the teachers and the students were responsible for programming the connection between the client and the server using the proxy. The ProxyFTP project provides an effective solution for securing FTP connections.
+
+
 
 ## Instructions
-Pour lancer le proxy, il suffit de se placer dans le dossier ProxyFTP et d'exécuter la commande "make" pour exécuter le makefile. Ensuite, on peut lancer le proxy avec la commande "./proxy". Il est important de suivre les instructions pour ouvrir une seconde fenêtre et se connecter avec "ftp -d [adresse] [port]".
 
-## Auteurs
+To launch the proxy, simply go to the ProxyFTP folder and run the "make" command to execute the makefile. Then you can launch the proxy with the command "./proxy". It is important to follow the instructions to open a second window and connect with "ftp -d [address] [port]".
+
+
+
+## Authors
+
+
 
 - [Titouan Pastor](https://github.com/TitouanPastor)
+
 - [Baptiste Bayche](https://github.com/BaptisteBayche)
